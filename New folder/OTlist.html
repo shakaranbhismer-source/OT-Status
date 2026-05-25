@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live Operation Theatre Dashboard</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Remove touch highlight blue on mobile */
+        }
+        /* Custom scrollbar aesthetics */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-900 select-none antialiased">
+
+    <!-- REAL-TIME SYSTEM HEADER -->
+    <header class="bg-slate-900 text-white px-4 sm:px-6 py-4 shadow-md sticky top-0 z-30 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div class="flex items-center space-x-3">
+            <div class="bg-slate-800 p-2 rounded-xl border border-slate-700">
+                <i data-lucide="activity" class="text-emerald-400 animate-pulse w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-lg sm:text-xl font-bold tracking-tight">Live Operation Theatre Dashboard</h1>
+                <p class="text-[10px] sm:text-xs text-slate-400">Hospital Real-time OT Coordination & Fasting Tracker</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+            <div class="text-right hidden md:block">
+                <span class="text-xs text-emerald-400 block font-semibold">• SYSTEM LOCAL STORAGE LIVE</span>
+                <span class="text-[10px] text-slate-400">Offline persistence active</span>
+            </div>
+            <div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs sm:text-sm font-medium text-slate-200 shadow-inner" id="live-date">
+                <!-- Set dynamically -->
+            </div>
+        </div>
+    </header>
+
+    <!-- SYSTEM ALERTS BANNER -->
+    <div id="alert-banner" class="hidden bg-rose-50 border-b border-rose-200 text-rose-900 px-4 sm:px-6 py-3 flex items-center justify-between transition-all duration-300">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="shield-alert" class="text-rose-600 flex-shrink-0 w-5 h-5"></i>
+            <span class="text-xs sm:text-sm" id="alert-message">
+                <strong>Theatre Occupied:</strong> Overlap alert.
+            </span>
+        </div>
+        <button onclick="dismissAlert()" class="text-rose-500 hover:text-rose-800 p-1 rounded-full hover:bg-rose-100 transition-colors">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <main class="flex-grow p-4 sm:p-6 max-w-7xl mx-auto space-y-8 w-full">
+        
+        <!-- ONGOING OT SECTION -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="h-3 w-3 bg-rose-500 rounded-full animate-ping"></div>
+                    <h2 class="text-sm sm:text-base font-extrabold uppercase tracking-wider text-slate-800">Ongoing OT</h2>
+                </div>
+                <span class="text-[11px] sm:text-xs text-slate-500 bg-slate-200 px-2.5 py-1 rounded-full font-bold">
+                    3 Active Theatres
+                </span>
+            </div>
+
+            <!-- OT Grid: Displays OT 1, OT 2, OT 3 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="ongoing-ot-grid">
+                <!-- Dynamically injected by JS -->
+            </div>
+        </section>
+
+        <hr class="border-slate-200" />
+
+        <!-- PENDING WAITING LIST -->
+        <section class="space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-bold text-slate-800">Pending Waiting List</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">Fast-track admissions and manage clinical fasting compliance</p>
+                </div>
+                
+                <button 
+                    onclick="openModal()"
+                    class="w-full sm:w-auto px-4 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center space-x-2 shadow-md transition-all cursor-pointer"
+                >
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Register Patient</span>
+                </button>
+            </div>
+
+            <!-- Two Columns Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- SURGICAL WAITING BOARD -->
+                <div class="bg-blue-50/40 rounded-2xl p-4 sm:p-5 border border-blue-100/60 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-5">
+                            <div class="flex items-center space-x-2 text-blue-900">
+                                <div class="p-1.5 bg-blue-100 text-blue-700 rounded-lg">
+                                    <i data-lucide="stethoscope" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-sm sm:text-base">General Surgical Waiting List</h3>
+                                    <p class="text-[10px] sm:text-xs text-blue-600/80 font-medium">Pre-op Ward Allocation</p>
+                                </div>
+                            </div>
+                            <span id="surgical-count" class="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-xs font-bold">
+                                0 cases
+                            </span>
+                        </div>
+
+                        <div class="space-y-4" id="surgical-waiting-list">
+                            <!-- Injected Dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ORTHOPEDIC WAITING BOARD -->
+                <div class="bg-orange-50/40 rounded-2xl p-4 sm:p-5 border border-orange-100/60 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-5">
+                            <div class="flex items-center space-x-2 text-orange-900">
+                                <div class="p-1.5 bg-orange-100 text-orange-700 rounded-lg">
+                                    <i data-lucide="bone" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-sm sm:text-base">Orthopedic Waiting List</h3>
+                                    <p class="text-[10px] sm:text-xs text-orange-600/80 font-medium">Divided by Anaesthesia Protocol</p>
+                                </div>
+                            </div>
+                            <span id="ortho-total-count" class="bg-orange-100 text-orange-800 px-2.5 py-1 rounded-full text-xs font-bold">
+                                0 cases
+                            </span>
+                        </div>
+
+                        <div class="space-y-6">
+                            <!-- GA Subsection -->
+                            <div>
+                                <div class="flex justify-between items-center border-b border-orange-200/50 pb-2 mb-3">
+                                    <h4 class="text-[10px] sm:text-xs font-bold text-orange-950 uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span class="h-2 w-2 rounded-full bg-purple-500"></span>
+                                        <span>General Anaesthesia (GA)</span>
+                                    </h4>
+                                    <span id="ortho-ga-count" class="bg-purple-100 text-purple-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                                        0 Patients
+                                    </span>
+                                </div>
+                                <div class="space-y-3" id="ortho-ga-list">
+                                    <!-- Injected Dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- LA Subsection -->
+                            <div>
+                                <div class="flex justify-between items-center border-b border-orange-200/50 pb-2 mb-3">
+                                    <h4 class="text-[10px] sm:text-xs font-bold text-orange-950 uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span class="h-2 w-2 rounded-full bg-teal-500"></span>
+                                        <span>Local Anaesthesia (LA)</span>
+                                    </h4>
+                                    <span id="ortho-la-count" class="bg-teal-100 text-teal-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                                        0 Patients
+                                    </span>
+                                </div>
+                                <div class="space-y-3" id="ortho-la-list">
+                                    <!-- Injected Dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- UNIFIED ADMISSION & EDIT PATIENT MODAL -->
+    <div id="patient-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-fade-in">
+            <div class="px-5 sm:px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div>
+                    <h3 id="modal-title" class="text-base sm:text-lg font-bold text-slate-800">New Admissions Registration</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-400">Match physical patient tags with hospital charts</p>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-lg hover:bg-slate-200 active:scale-90">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-4">
+                <form id="patient-form" onsubmit="savePatient(event)" class="space-y-4">
+                    <input type="hidden" id="form-patient-id" value="">
+                    
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Patient Name</label>
+                        <input 
+                            type="text" 
+                            id="form-name" 
+                            required 
+                            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all text-sm bg-slate-50 focus:bg-white"
+                            placeholder="e.g. Ahmad Kassim"
+                            style="width: 100%; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 14px;"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Identity Card / Passport Number</label>
+                        <input 
+                            type="text" 
+                            id="form-ic" 
+                            required 
+                            placeholder="e.g. 550218-08-3391"
+                            style="width: 100%; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 14px;"
+                        />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Department Team</label>
+                            <select 
+                                id="form-department" 
+                                style="width: 100%; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 14px; background: white;"
+                            >
+                                <option value="Surgical">General Surgical</option>
+                                <option value="Orthopedic">Orthopedics</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Anaesthesia Type</label>
+                            <select 
+                                id="form-anaesthesia" 
+                                style="width: 100%; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 14px; background: white;"
+                            >
+                                <option value="General">General Anaesthesia (GA)</option>
+                                <option value="Local">Local Anaesthesia (LA)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Current Status</label>
+                            <select 
+                                id="form-status" 
+                                onchange="toggleOtSelect()"
+                                style="width: 100%; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 14px; background: white;"
+                            >
+                                <option value="Pending">Pending / In-Ward</option>
+                                <option value="Ongoing">Active Surgery</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- CONDITIONAL LIVE OT ROOM ASSIGNMENT -->
+                    <div id="room-selection-container" class="hidden">
+                        <label class="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Assign Live OT Room</label>
+                        <select 
+                            id="form-otroom" 
+                            style="width: 100%; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 14px; background: white;"
+                        >
+                            <option value="">-- Choose an active room --</option>
+                            <option value="OT 1">Operation Theatre 1 (OT 1)</option>
+                            <option value="OT 2">Operation Theatre 2 (OT 2)</option>
+                            <option value="OT 3">Operation Theatre 3 (OT 3)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Last Meal Time / Fasting Status</label>
+                        <input 
+                            type="text" 
+                            id="form-lastmeal" 
+                            placeholder="e.g. Fasting since midnight (NPO)"
+                            style="width: 100%; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 14px;"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Confirmed Clinical Diagnosis</label>
+                        <input 
+                            type="text" 
+                            id="form-diagnosis" 
+                            required 
+                            placeholder="e.g. Right Trigger Finger"
+                            style="width: 100%; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 14px;"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Proposed Procedure / Operation</label>
+                        <input 
+                            type="text" 
+                            id="form-operation" 
+                            required 
+                            placeholder="e.g. Trigger Finger Release"
+                            style="width: 100%; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 14px;"
+                        />
+                    </div>
+                </form>
+            </div>
+            
+            <div class="px-5 sm:px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-3">
+                <button 
+                    type="button" 
+                    onclick="closeModal()"
+                    class="px-4 py-2.5 text-slate-600 text-xs sm:text-sm font-semibold hover:bg-slate-200 rounded-xl transition-colors active:scale-95 cursor-pointer"
+                >
+                    Close
+                </button>
+                <button 
+                    type="submit" 
+                    form="patient-form"
+                    class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                >
+                    Confirm Registration
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRMATION DIALOG MODAL (REPLACES NATIVE CONFIRM) -->
+    <div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 sm:p-6 space-y-4 animate-fade-in">
+            <div class="flex items-center space-x-3 text-rose-600">
+                <div class="p-2 bg-rose-50 rounded-xl">
+                    <i data-lucide="shield-alert" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900">Remove Patient File?</h3>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                Are you sure you want to permanently remove this patient from the tracker records? This clinical event cannot be undone.
+            </p>
+            <div class="flex justify-end space-x-2.5">
+                <button 
+                    onclick="closeDeleteModal()"
+                    class="px-4 py-2 text-xs sm:text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors active:scale-95 cursor-pointer"
+                >
+                    Cancel
+                </button>
+                <button 
+                    id="confirm-delete-btn"
+                    class="px-4 py-2 text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                >
+                    Delete File
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-100 border-t border-slate-200 py-4 text-center text-[10px] sm:text-xs text-slate-500 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p>© 2026 Live Hospital Management Systems. All rights reserved.</p>
+            <p class="font-medium text-slate-600 flex items-center gap-1.5 justify-center">
+                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+                Secure Patient Portal: Local Data Encryption Active
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Default initialized database values (synchronized to localstorage)
+        const DEFAULT_PATIENTS = [
+            { 
+                id: '1', 
+                name: 'Ahmad bin Daud', 
+                icNumber: '800102-14-5563', 
+                diagnosis: 'Acute Appendicitis', 
+                operation: 'Laparoscopic Appendectomy', 
+                department: 'Surgical', 
+                status: 'Ongoing',
+                otRoom: 'OT 1',
+                lastMeal: '02:30 AM (Fasting)'
+            },
+            { 
+                id: '5', 
+                name: "Dr. Fatima's Patient", 
+                icNumber: '781102-03-5111', 
+                diagnosis: 'Osteoarthritis Knee', 
+                operation: 'Total Knee Arthroplasty', 
+                department: 'Orthopedic', 
+                status: 'Ongoing',
+                otRoom: 'OT 2',
+                lastMeal: '11:00 PM (NPO)'
+            },
+            { 
+                id: '2', 
+                name: 'Tan Wei Ling', 
+                icNumber: '920415-07-2244', 
+                diagnosis: 'Right Femur Fracture', 
+                operation: 'ORIF Right Femur', 
+                department: 'Orthopedic', 
+                status: 'Pending',
+                lastMeal: '04:00 AM Today (Water only)',
+                anaesthesiaType: 'General'
+            },
+            { 
+                id: '3', 
+                name: 'Siti Nurhaliza', 
+                icNumber: '850912-10-1234', 
+                diagnosis: 'Cholelithiasis', 
+                operation: 'Laparoscopic Cholecystectomy', 
+                department: 'Surgical', 
+                status: 'Pending',
+                lastMeal: '03:15 AM Today',
+                anaesthesiaType: 'General'
+            },
+            { 
+                id: '4', 
+                name: 'Rajesh Kumar', 
+                icNumber: '750322-01-6789', 
+                diagnosis: 'Left ACL Tear', 
+                operation: 'ACL Reconstruction', 
+                department: 'Orthopedic', 
+                status: 'Pending',
+                lastMeal: 'Midnight (NPO)',
+                anaesthesiaType: 'General'
+            },
+            { 
+                id: '6', 
+                name: 'Wong Siew Mei', 
+                icNumber: '680512-10-5442', 
+                diagnosis: 'Carpal Tunnel Syndrome', 
+                operation: 'Carpal Tunnel Release', 
+                department: 'Orthopedic', 
+                status: 'Pending',
+                lastMeal: 'Light breakfast at 7:00 AM',
+                anaesthesiaType: 'Local'
+            },
+            { 
+                id: '7', 
+                name: 'Ahmad Kassim', 
+                icNumber: '550218-08-3391', 
+                diagnosis: 'Right Trigger Finger', 
+                operation: 'Trigger Finger Release', 
+                department: 'Orthopedic', 
+                status: 'Pending',
+                lastMeal: 'No fasting required',
+                anaesthesiaType: 'Local'
+            }
+        ];
+
+        // Load database or instantiate
+        let patients = JSON.parse(localStorage.getItem('OT_TRACKER_PATIENTS')) || DEFAULT_PATIENTS;
+        let deleteTargetId = null;
+
+        // Format live calendar dates
+        function updateDate() {
+            const dateEl = document.getElementById('live-date');
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            dateEl.innerText = new Date().toLocaleDateString('en-MY', options);
+        }
+
+        // Save Operations array into Device LocalStorage
+        function saveToStorage() {
+            localStorage.setItem('OT_TRACKER_PATIENTS', JSON.stringify(patients));
+        }
+
+        // Trigger safe UI system warning messages
+        function triggerAlert(title, message) {
+            const banner = document.getElementById('alert-banner');
+            const msgEl = document.getElementById('alert-message');
+            msgEl.innerHTML = `<strong>${title}:</strong> ${message}`;
+            banner.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function dismissAlert() {
+            const banner = document.getElementById('alert-banner');
+            banner.classList.add('hidden');
+        }
+
+        // Clear ongoing OT state for completion
+        function completeOperation(id) {
+            patients = patients.map(p => {
+                if (p.id === id) {
+                    p.status = 'Completed';
+                    p.otRoom = '';
+                }
+                return p;
+            });
+            saveToStorage();
+            renderDashboard();
+        }
+
+        // Move waiting patient to Active OT Room
+        function admitToOt(opId, roomName) {
+            // Overlapping room assignment safety check
+            const occupant = patients.find(p => p.status === 'Ongoing' && p.otRoom === roomName);
+            if (occupant) {
+                triggerAlert('Theatre Occupied', `${occupant.name} is currently undergoing a procedure in ${roomName}. Complete that case or select another room.`);
+                return;
+            }
+
+            patients = patients.map(p => {
+                if (p.id === opId) {
+                    p.status = 'Ongoing';
+                    p.otRoom = roomName;
+                }
+                return p;
+            });
+            saveToStorage();
+            renderDashboard();
+        }
+
+        // Trigger customized delete modal
+        function triggerDelete(id) {
+            deleteTargetId = id;
+            const modal = document.getElementById('delete-modal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            deleteTargetId = null;
+            const modal = document.getElementById('delete-modal');
+            modal.classList.add('hidden');
+        }
+
+        // Confirm patient deletion click handler
+        document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+            if (deleteTargetId) {
+                patients = patients.filter(p => p.id !== deleteTargetId);
+                saveToStorage();
+                closeDeleteModal();
+                renderDashboard();
+            }
+        });
+
+        // Toggle dropdown in modal
+        function toggleOtSelect() {
+            const status = document.getElementById('form-status').value;
+            const container = document.getElementById('room-selection-container');
+            if (status === 'Ongoing') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+                document.getElementById('form-otroom').value = '';
+            }
+        }
+
+        // Form & Modals Actions
+        function openModal(patient = null) {
+            const modal = document.getElementById('patient-modal');
+            const titleEl = document.getElementById('modal-title');
+            
+            // Elements
+            const formId = document.getElementById('form-patient-id');
+            const formName = document.getElementById('form-name');
+            const formIc = document.getElementById('form-ic');
+            const formDept = document.getElementById('form-department');
+            const formAnas = document.getElementById('form-anaesthesia');
+            const formStatus = document.getElementById('form-status');
+            const formRoom = document.getElementById('form-otroom');
+            const formMeal = document.getElementById('form-lastmeal');
+            const formDiag = document.getElementById('form-diagnosis');
+            const formOper = document.getElementById('form-operation');
+
+            if (patient) {
+                titleEl.innerText = "Update Patient File";
+                formId.value = patient.id;
+                formName.value = patient.name;
+                formIc.value = patient.icNumber;
+                formDept.value = patient.department;
+                formAnas.value = patient.anaesthesiaType || 'General';
+                formStatus.value = patient.status;
+                formRoom.value = patient.otRoom || '';
+                formMeal.value = patient.lastMeal || '';
+                formDiag.value = patient.diagnosis;
+                formOper.value = patient.operation;
+            } else {
+                titleEl.innerText = "New Admissions Registration";
+                formId.value = "";
+                formName.value = "";
+                formIc.value = "";
+                formDept.value = "Surgical";
+                formAnas.value = "General";
+                formStatus.value = "Pending";
+                formRoom.value = "";
+                formMeal.value = "";
+                formDiag.value = "";
+                formOper.value = "";
+            }
+
+            toggleOtSelect();
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('patient-modal');
+            modal.classList.add('hidden');
+        }
+
+        function savePatient(e) {
+            e.preventDefault();
+            
+            const pId = document.getElementById('form-patient-id').value;
+            const pName = document.getElementById('form-name').value;
+            const pIc = document.getElementById('form-ic').value;
+            const pDept = document.getElementById('form-department').value;
+            const pAnas = document.getElementById('form-anaesthesia').value;
+            const pStatus = document.getElementById('form-status').value;
+            const pRoom = document.getElementById('form-otroom').value;
+            const pMeal = document.getElementById('form-lastmeal').value;
+            const pDiag = document.getElementById('form-diagnosis').value;
+            const pOper = document.getElementById('form-operation').value;
+
+            // Room occupancy double check on edits
+            if (pStatus === 'Ongoing' && pRoom) {
+                const occupant = patients.find(p => p.status === 'Ongoing' && p.otRoom === pRoom && p.id !== pId);
+                if (occupant) {
+                    triggerAlert('Conflict Detected', `${occupant.name} is currently inside ${pRoom}. Complete or change their schedule first.`);
+                    return;
+                }
+            }
+
+            if (pId) {
+                // Edit mode
+                patients = patients.map(p => {
+                    if (p.id === pId) {
+                        return {
+                            ...p,
+                            name: pName,
+                            icNumber: pIc,
+                            department: pDept,
+                            anaesthesiaType: pAnas,
+                            status: pStatus,
+                            otRoom: pStatus === 'Ongoing' ? pRoom : '',
+                            lastMeal: pMeal,
+                            diagnosis: pDiag,
+                            operation: pOper
+                        };
+                    }
+                    return p;
+                });
+            } else {
+                // Add mode
+                const newPatient = {
+                    id: Date.now().toString(),
+                    name: pName,
+                    icNumber: pIc,
+                    department: pDept,
+                    anaesthesiaType: pAnas,
+                    status: pStatus,
+                    otRoom: pStatus === 'Ongoing' ? pRoom : '',
+                    lastMeal: pMeal,
+                    diagnosis: pDiag,
+                    operation: pOper
+                };
+                patients.push(newPatient);
+            }
+
+            saveToStorage();
+            closeModal();
+            renderDashboard();
+        }
+
+        // Render Ongoing and Pending components dynamically
+        function renderDashboard() {
+            const ongoingGrid = document.getElementById('ongoing-ot-grid');
+            const surgicalList = document.getElementById('surgical-waiting-list');
+            const orthoGaList = document.getElementById('ortho-ga-list');
+            const orthoLaList = document.getElementById('ortho-la-list');
+
+            // Setup categories
+            const otRooms = [
+                { id: 'OT 1', name: 'Operation Theatre 1', colorClass: 'border-emerald-500' },
+                { id: 'OT 2', name: 'Operation Theatre 2', colorClass: 'border-blue-500' },
+                { id: 'OT 3', name: 'Operation Theatre 3', colorClass: 'border-violet-500' }
+            ];
+
+            // 1. Render ONGOING OT SECTION
+            let ongoingHTML = '';
+            otRooms.forEach(room => {
+                const activePatient = patients.find(p => p.status === 'Ongoing' && p.otRoom === room.id);
+                
+                if (activePatient) {
+                    const dynamicAnaesBadge = activePatient.anaesthesiaType === 'Local' 
+                        ? 'bg-teal-100 text-teal-800' 
+                        : 'bg-purple-100 text-purple-800';
+                    const dynamicAnaesLabel = activePatient.anaesthesiaType === 'Local' ? 'LA' : 'GA';
+
+                    const mealBadge = activePatient.lastMeal 
+                        ? `<div class="bg-amber-50 text-amber-800 p-2 rounded-xl border border-amber-100/60 text-xs flex items-center gap-1.5 mt-2">
+                               <i data-lucide="utensils" class="w-3.5 h-3.5 text-amber-600 flex-shrink-0"></i>
+                               <span><strong>Last Meal:</strong> ${activePatient.lastMeal}</span>
+                           </div>` 
+                        : '';
+
+                    ongoingHTML += `
+                    <div class="bg-white rounded-2xl shadow-sm border-t-4 ${room.colorClass} p-5 flex flex-col justify-between transition-all duration-300 relative overflow-hidden ring-1 ring-slate-100 hover:shadow-md min-h-[250px]">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm sm:text-base font-bold text-slate-800">${room.name}</h3>
+                                <span class="bg-rose-50 text-rose-700 border border-rose-100 text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center space-x-1">
+                                    <span class="h-1.5 w-1.5 bg-rose-500 rounded-full animate-ping mr-1"></span>
+                                    ONGOING
+                                </span>
+                            </div>
+
+                            <div class="space-y-3">
+                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Patient Name</p>
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-sm sm:text-base font-bold text-slate-900 truncate pr-2">${activePatient.name}</p>
+                                        <span class="text-[10px] px-2 py-0.5 rounded-md font-extrabold flex-shrink-0 ${dynamicAnaesBadge}">
+                                            ${dynamicAnaesLabel}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-0.5">IC: ${activePatient.icNumber}</p>
+                                </div>
+
+                                <div class="text-xs">
+                                    <span class="text-slate-400 block">Department</span>
+                                    <span class="inline-block mt-0.5 px-2 py-0.5 rounded font-semibold ${
+                                        activePatient.department === 'Surgical' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
+                                    }">
+                                        ${activePatient.department}
+                                    </span>
+                                </div>
+
+                                ${mealBadge}
+
+                                <div class="text-xs pt-1 border-t border-slate-100 mt-1">
+                                    <span class="text-slate-400 block">Procedure</span>
+                                    <p class="font-medium text-slate-800">${activePatient.operation}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                            <button 
+                                onclick='openModal(${JSON.stringify(activePatient)})'
+                                class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all flex items-center space-x-1 cursor-pointer"
+                            >
+                                <i data-lucide="edit-3" class="w-3 h-3"></i>
+                                <span>Edit</span>
+                            </button>
+                            <button 
+                                onclick="completeOperation('${activePatient.id}')"
+                                class="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm transition-all flex items-center space-x-1 active:scale-95 cursor-pointer"
+                            >
+                                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                                <span>Complete OT</span>
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                } else {
+                    ongoingHTML += `
+                    <div class="bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200 p-5 flex flex-col justify-between items-center text-center min-h-[250px]">
+                        <div>
+                            <div class="flex justify-between items-center w-full mb-4">
+                                <h3 class="text-sm sm:text-base font-bold text-slate-500">${room.name}</h3>
+                                <span class="bg-slate-200 text-slate-500 text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-bold">
+                                    VACANT
+                                </span>
+                            </div>
+                            <div class="py-6 flex flex-col items-center">
+                                <div class="p-3 bg-slate-100 rounded-full text-slate-400 mb-2">
+                                    <i data-lucide="clock" class="w-6 h-6"></i>
+                                </div>
+                                <p class="text-sm font-semibold text-slate-600">Theatre Empty</p>
+                                <p class="text-xs text-slate-400">Ready for next admitted patient</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] text-slate-400 italic">Select a patient below to start</span>
+                    </div>
+                    `;
+                }
+            });
+            ongoingGrid.innerHTML = ongoingHTML;
+
+            // Render Patients Card Helper
+            const renderPatientCard = (patient) => {
+                const mealBox = patient.lastMeal 
+                    ? `<div class="bg-amber-50 text-amber-800 p-2 rounded-lg text-[11px] border border-amber-100/40 flex items-center gap-1.5 w-fit mt-2">
+                           <i data-lucide="utensils" class="w-3 h-3 text-amber-500"></i>
+                           <span><strong>Last Meal:</strong> ${patient.lastMeal}</span>
+                       </div>` 
+                    : '';
+
+                return `
+                <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm">${patient.name}</h4>
+                            <p class="text-[11px] text-slate-500">IC: ${patient.icNumber}</p>
+                        </div>
+                        <div class="flex space-x-1">
+                            <button onclick='openModal(${JSON.stringify(patient)})' class="p-1.5 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100 active:scale-90" title="Edit">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="triggerDelete('${patient.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 active:scale-90" title="Delete">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1 text-xs text-slate-600 border-t border-slate-100/80 pt-2.5 mt-2">
+                        <p><strong class="text-slate-700">Diagnosis:</strong> ${patient.diagnosis}</p>
+                        <p><strong class="text-slate-700">Operation:</strong> ${patient.operation}</p>
+                        ${mealBox}
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap gap-1 items-center justify-between">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Admit to:</span>
+                        <div class="flex gap-1.5">
+                            <button onclick="admitToOt('${patient.id}', 'OT 1')" class="px-2.5 py-1 text-[10px] sm:text-xs font-bold bg-slate-100 hover:bg-slate-900 hover:text-white rounded text-slate-700 transition-colors active:scale-95 cursor-pointer">OT 1</button>
+                            <button onclick="admitToOt('${patient.id}', 'OT 2')" class="px-2.5 py-1 text-[10px] sm:text-xs font-bold bg-slate-100 hover:bg-slate-900 hover:text-white rounded text-slate-700 transition-colors active:scale-95 cursor-pointer">OT 2</button>
+                            <button onclick="admitToOt('${patient.id}', 'OT 3')" class="px-2.5 py-1 text-[10px] sm:text-xs font-bold bg-slate-100 hover:bg-slate-900 hover:text-white rounded text-slate-700 transition-colors active:scale-95 cursor-pointer">OT 3</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            };
+
+            // 2. Render SURGICAL waiting list
+            const pendingSurgical = patients.filter(p => p.status === 'Pending' && p.department === 'Surgical');
+            document.getElementById('surgical-count').innerText = `${pendingSurgical.length} cases`;
+            if (pendingSurgical.length === 0) {
+                surgicalList.innerHTML = `
+                <div class="text-center py-10 bg-white/50 border border-dashed border-blue-200 rounded-xl">
+                    <i data-lucide="check" class="mx-auto text-blue-400 mb-2 w-6 h-6"></i>
+                    <p class="text-xs font-semibold text-slate-500">No pending surgical patients</p>
+                </div>`;
+            } else {
+                surgicalList.innerHTML = pendingSurgical.map(p => renderPatientCard(p)).join('');
+            }
+
+            // 3. Render ORTHOPEDIC lists divided into GA and LA
+            const orthoGA = patients.filter(p => p.status === 'Pending' && p.department === 'Orthopedic' && p.anaesthesiaType === 'General');
+            const orthoLA = patients.filter(p => p.status === 'Pending' && p.department === 'Orthopedic' && p.anaesthesiaType === 'Local');
+
+            document.getElementById('ortho-total-count').innerText = `${orthoGA.length + orthoLA.length} cases`;
+            document.getElementById('ortho-ga-count').innerText = `${orthoGA.length} Patients`;
+            document.getElementById('ortho-la-count').innerText = `${orthoLA.length} Patients`;
+
+            if (orthoGA.length === 0) {
+                orthoGaList.innerHTML = `<p class="text-[11px] text-slate-400 italic py-4 text-center bg-white/40 rounded-xl border border-dashed border-orange-100">No pending GA Orthopedic cases</p>`;
+            } else {
+                orthoGaList.innerHTML = orthoGA.map(p => renderPatientCard(p)).join('');
+            }
+
+            if (orthoLA.length === 0) {
+                orthoLaList.innerHTML = `<p class="text-[11px] text-slate-400 italic py-4 text-center bg-white/40 rounded-xl border border-dashed border-orange-100">No pending LA Orthopedic cases</p>`;
+            } else {
+                orthoLaList.innerHTML = orthoLA.map(p => renderPatientCard(p)).join('');
+            }
+
+            // Always update Lucide SVG replacements
+            lucide.createIcons();
+        }
+
+        // On window startup, configure live clocks and load viewports
+        window.onload = function() {
+            updateDate();
+            renderDashboard();
+            setInterval(updateDate, 60000); // refresh time
+        };
+    </script>
+</body>
+</html>
